@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     WECHAT_APP_ID: str = ""
     WECHAT_APP_SECRET: str = ""
+    WECHAT_MECHANT_ID: str = ""
+    WECHAT_NONCE_STR: str = ""
     DATABASE_URL: str = ""
     DATABASE_NAME: str = ""
     DATABASE_USERNAME: str = ""

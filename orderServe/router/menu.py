@@ -3,10 +3,10 @@ from fastapi import APIRouter,Depends
 import utils
 import schema
 
-get_category_sql = "SELECT * FROM category"
-get_product_sql = "SELECT p.* FROM product AS p INNER JOIN category_product AS cp ON cp.pid = p.id WHERE cp.cid = %s"
-get_image_sql = "SELECT * FROM image_product WHERE pid = %s"
-get_label_sql = "SELECT l.* FROM label AS l INNER JOIN label_product AS lp ON lp.lid = l.id WHERE lp.pid = %s"
+get_category_sql = "SELECT * FROM category;"
+get_product_sql = "SELECT p.* FROM product AS p INNER JOIN category_product AS cp ON cp.pid = p.id WHERE cp.cid = %s;"
+get_image_sql = "SELECT * FROM image_product WHERE pid = %s;"
+get_label_sql = "SELECT l.* FROM label AS l INNER JOIN label_product AS lp ON lp.lid = l.id WHERE lp.pid = %s;"
 
 menu_api = APIRouter()
 

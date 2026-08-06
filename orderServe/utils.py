@@ -29,12 +29,12 @@ async def sql_fetch_all(pool, sql, args=None):
 
 async def sql_execute(pool, sql, args=None):
     async with pool.acquire() as conn:
-        async with conn.cursor() as cur:
+        async with conn.cursor(DictCursor) as cur:
             return await cur.execute(sql, args)
 
 # 鉴权token相关
 def create_token(user_id: int, openid: str):
-    expire = datetime.now(timezone.utc) + timedelta(days=7)
+    expire = datetime.now() + timedelta(days=7)
     payload = {
         "sub": str(user_id),
         "openid": openid,
@@ -68,3 +68,31 @@ async def check_token(authorization: str = Header(), pool = Depends(get_db_pool)
         return {"openid":openid, "id":id}
     else:
         raise HTTPException(status_code=401, detail="认证失败，无效的 Token", headers={"WWW-Authenticate": "Bearer"},)
+
+def get_trade_id(num:int):
+    now = datetime.now().strftime()
+    tar = str(num)
+    tar = (5 -len(tar))*'0'+tar
+    return "M"+tar, "znn_"+now+"_m"+tar
+
+# sql事务处理
+async def sql_getNextNum(pool, qsql, usql, isql, transdate=None):
+    async with pool.acquire() as conn:
+        await conn.autocommit(False)
+        async with conn.cursor(DictCursor) as cur:
+            try:
+                await cur.execute(qsql, transdate)
+                qres = await cur.fetchone()
+                if qres is not None:
+                    num = qres.get("num")+1
+                    await cur.execute(usql, (num, transdate[0]))
+                else :
+                    num = 1
+                    await cur.execute(isql, (transdate[0], num))
+                conn.commit()
+                return num
+            except Exception as e:
+                await conn.rollback()
+                raise e
+            finally:
+                conn.autocommit(True)

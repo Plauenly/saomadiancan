@@ -12,9 +12,9 @@ wx_login_url = "https://api.weixin.qq.com/sns/jscode2session"
 
 find_user_sql = "SELECT * FROM USER WHERE open_id = %s;"
 insert_user_sql = "INSERT INTO USER (open_id, create_at, last_login) VALUES(%s,%s,%s);"
-update_user_sql = "UPDATE USER SET last_login = %s WHERE open_id = %s"
+update_user_sql = "UPDATE USER SET last_login = %s WHERE open_id = %s;"
 
-
+# id, open_id 
 
 
 # prefix = "/api/login"
@@ -29,7 +29,7 @@ async def login(req : Request, client=Depends(utils.get_client_pool), db_pool=De
         "js_code": code,
         "grant_type": "authorization_code"
     }
-
+    #应该要设置请求头吧
     response = await client.get(wx_login_url, params=params, timeout=10)
 
     result = response.json()
@@ -46,12 +46,12 @@ async def login(req : Request, client=Depends(utils.get_client_pool), db_pool=De
     # session_key = result.get("session_key")
 
     sql_response = await utils.sql_fetch_one(db_pool, find_user_sql, (openid,))
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if sql_response is None:
-        await utils.sql_execute(db_pool, insert_user_sql, (openid, now, now))
+        await utils.sql_execute(db_pool, insert_user_sql, {"open_id":openid, "create_at":now, "last_login":now})
         sql_response = await utils.sql_fetch_one(db_pool, find_user_sql, (openid,))
     else:
-        await utils.sql_execute(db_pool, update_user_sql, (openid, now))
+        await utils.sql_execute(db_pool, update_user_sql, {"open_id":openid, "last_login":now})
 
     user_id = sql_response.get("id")
     token = utils.create_token(user_id, openid)
