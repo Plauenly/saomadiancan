@@ -335,7 +335,7 @@
       "number": 2,
       "is_takeout": 1,
       "is_refund": 0,
-      "dining_method": true
+      "is_out": 0
     }
   ],
   "total_amount": 11.98,
@@ -364,9 +364,9 @@
 | `number` | number | 数量 |
 | `is_takeout` | number | 是否支持打包 0/1（后端应据此二次校验） |
 | `is_refund` | number | 前端固定传 0 |
-| `dining_method` | boolean | 就餐方式：`true`=堂食，`false`=打包（**每个商品独立选择**） |
+| `is_out` | number | 是否打包：`0`=不打包/堂食，`1`=打包（**每个商品独立选择**） |
 
-> ⚠️ `dining_method` 是每个商品粒度的（不是订单级别）。前端支持同一订单中部分商品堂食、部分打包（仅 `is_takeout=1` 的商品可切换为打包）。后端应据此按商品维度记录就餐方式。
+> ⚠️ `is_out` 是每个商品粒度的（不是订单级别）。前端支持同一订单中部分商品堂食、部分打包（仅 `is_takeout=1` 的商品可设为 `is_out=1`）。后端应据此按商品维度记录就餐方式。
 
 **返回格式：**
 
