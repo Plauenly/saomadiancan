@@ -1,6 +1,6 @@
 # 七香嫂包子铺智能点餐系统 — 后端 API 接口文档
 
-> 更新日期：2026-08-01（依据后端代码 `~/桌面/code/houduan/orderServe` + 前端代码 `七香嫂包子铺智能点餐系统2` 整理）
+> 更新日期：2026-08-06（依据前端代码 `七香嫂包子铺智能点餐系统2` 逐接口对照更新）
 >
 > 前端请求基地址：`http://localhost:8080`
 > Content-Type：`application/json`
@@ -23,6 +23,7 @@
 | GET `/api/orders/{id}` | ✅ | ⏳ 未实现 |
 | POST `/api/orders` | ✅ | ⏳ 未实现 |
 | POST `/api/orders/{id}/refund` | ✅（预留） | ⏳ 未实现 |
+| POST `/api/orders/pay` | ✅ | ⏳ 未实现 |
 
 ### 🔴 已发现的前后端差异（需对齐，否则联调会出问题）
 
@@ -45,6 +46,7 @@
 | 7 | GET | `/api/orders/{id}` | 订单详情 | ✅ | ⏳ |
 | 8 | POST | `/api/orders` | 提交订单（下单支付） | ✅ | ⏳ |
 | 9 | POST | `/api/orders/{id}/refund` | 发起退款 | ✅ | ⏳ |
+| 10 | POST | `/api/orders/pay` | 继续支付（待支付订单） | ✅ | ⏳ |
 
 ---
 
@@ -332,13 +334,13 @@
       "price": 5.99,
       "number": 2,
       "is_takeout": 1,
-      "is_refund": 0
+      "is_refund": 0,
+      "dining_method": true
     }
   ],
   "total_amount": 11.98,
   "shop_num": 2,
-  "remark": "少盐",
-  "dining_method": true
+  "remark": "少盐"
 }
 ```
 
@@ -350,7 +352,6 @@
 | `total_amount` | number | ✅ | 合计金额（前端已做两位小数截断） |
 | `shop_num` | number | ✅ | 商品总件数 |
 | `remark` | string | ❌ | 备注，可为空字符串 |
-| `dining_method` | boolean | ✅ | 就餐方式：`true`=堂食，`false`=打包 |
 
 **commodity_list 元素：**
 
@@ -363,8 +364,9 @@
 | `number` | number | 数量 |
 | `is_takeout` | number | 是否支持打包 0/1（后端应据此二次校验） |
 | `is_refund` | number | 前端固定传 0 |
+| `dining_method` | boolean | 就餐方式：`true`=堂食，`false`=打包（**每个商品独立选择**） |
 
-> 前端下单前已校验：打包（`dining_method=false`）时若存在 `is_takeout` 为 0 的商品会拦截并提示，后端也应做同样的兜底校验。
+> ⚠️ `dining_method` 是每个商品粒度的（不是订单级别）。前端支持同一订单中部分商品堂食、部分打包（仅 `is_takeout=1` 的商品可切换为打包）。后端应据此按商品维度记录就餐方式。
 
 **返回格式：**
 
@@ -378,7 +380,7 @@
 
 ---
 
-## 9. POST `/api/orders/{id}/refund` — 发起退款（⏳ 后端未实现，前端也未接）
+## 9. POST `/api/orders/{id}/refund` — 发起退款（⏳ 后端未实现，前端预留）
 
 **路径参数：** `id` 订单ID，需鉴权
 
@@ -414,6 +416,47 @@
 - 退款成功后该订单状态应更新为 `"4"`（已退款）
 
 > 当前前端尚未实现退款页面，此接口为预留，后续在订单详情页会添加"申请退款"按钮。
+
+---
+
+## 10. POST `/api/orders/pay` — 继续支付（⏳ 后端未实现）
+
+用于订单详情页对状态为"待支付"（`"0"`）的订单发起支付。
+
+**请求体：**
+
+```json
+{
+  "order_id": 123
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `order_id` | number | ✅ | 待支付订单的 ID |
+
+**返回格式：**
+
+```json
+{
+  "success": true
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `success` | boolean | 支付是否成功 |
+| `message` | string | 失败时的错误提示（可选） |
+
+**前端行为（`order-detail.vue`）：**
+- 仅状态为 `"0"`（待支付）的订单详情页底部显示绿色"继续支付"按钮
+- 支付成功后自动刷新订单详情（重新调用 GET `/api/orders/{id}`）
+- 支付失败 toast 显示 `res.message` 或默认"支付失败，请重试"
+
+**业务约束（建议后端校验）：**
+- 仅状态为 `"0"`（待支付）的订单可调用
+- 其他状态的订单调用应返回 `success: false`
+- 支付成功后订单状态应更新为 `"1"`（已支付）
 
 ---
 
